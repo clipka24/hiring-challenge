@@ -1,0 +1,15 @@
+{
+   "Records":[
+      {
+         "EventSource":"aws:sns",
+         "EventVersion":"1.0",
+         "EventSubscriptionArn":"arn:aws:sns:eu-central-1:1234455:ab-test:5d10f22e-82b2-4039-b834-e15c5eba8546",
+         "Sns":{
+            "Type":"Notification",
+            "MessageId":"e5f40739-07fc-5237-ca35-5986c8ed3a999",
+            "Subject":"None",
+            "Message":"{   \"test_id\": \"100042256:::headline:::2773242877\",   \"content_id\": \"100042256\",   \"variants\": [     {       \"id\": 0,       \"clicks\": \"320\",       \"views\": \"10464\"     },     {       \"id\": 1,       \"clicks\": \"260\",       \"views\": \"10472\"     },     {       \"id\": 2,       \"clicks\": \"209\",       \"views\": \"10468\"     }     ],   \"msg_timestamp\": \"2025-01-08 10:19:13\" } "
+         }
+      }
+   ]
+}

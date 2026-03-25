@@ -1,0 +1,50 @@
+# for local testing
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: abtests
+      POSTGRES_USER: abtests
+      POSTGRES_PASSWORD: abtests
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U abtests" ]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  ab-test-lambda:
+    build: /Users/clipka/IdeaProjects/hiring-challenge
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: abtests
+      DB_USER: abtests
+      DB_PASSWORD: abtests
+      DB_SSLMODE: disable
+    healthcheck:
+      test: [ "CMD", "curl", "-sf", "-X", "POST", "-d", "{}", "-H", "Content-Type: application/json", "http://localhost:8080/2015-03-31/functions/function/invocations" ]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  service-curl:
+    image: curlimages/curl:latest
+    depends_on:
+      ab-test-lambda:
+        condition: service_healthy
+    entrypoint: [ "sh", "-c" ]
+    volumes:
+       - ./sample-requests:/data
+    command:
+      - |
+        echo "Sending test events...";
+        curl -X POST -d "@/data/request1.json" --url http://ab-test-lambda:8080/2015-03-31/functions/function/invocations -H "Content-Type: application/json"
+        curl -X POST -d "@/data/request2.json" --url http://ab-test-lambda:8080/2015-03-31/functions/function/invocations -H "Content-Type: application/json"
+        curl -X POST -d "@/data/request3.json" --url http://ab-test-lambda:8080/2015-03-31/functions/function/invocations -H "Content-Type: application/json"
