@@ -13,6 +13,32 @@ services:
       timeout: 5s
       retries: 10
 
+  localstack:
+    image: localstack/localstack:3
+    environment:
+      SERVICES: secretsmanager
+    healthcheck:
+      test: [ "CMD", "curl", "-sf", "http://localhost:4566/_localstack/health" ]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  init-secrets:
+    image: amazon/aws-cli:latest
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: eu-central-1
+    entrypoint: [ "sh", "-c" ]
+    command:
+      - |
+        aws --endpoint-url=http://localstack:4566 secretsmanager create-secret \
+          --name rds-credentials \
+          --secret-string '{"host":"postgres","port":"5432","dbname":"abtests","username":"abtests","password":"abtests"}'
+
   ab-test-lambda:
     build: /Users/clipka/IdeaProjects/hiring-challenge
     ports:
@@ -20,12 +46,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      init-secrets:
+        condition: service_completed_successfully
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: abtests
-      DB_USER: abtests
-      DB_PASSWORD: abtests
+      DB_SECRET_ARN: arn:aws:secretsmanager:eu-central-1:000000000000:secret:rds-credentials
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: eu-central-1
       DB_SSLMODE: disable
     healthcheck:
       test: [ "CMD", "curl", "-sf", "-X", "POST", "-d", "{}", "-H", "Content-Type: application/json", "http://localhost:8080/2015-03-31/functions/function/invocations" ]

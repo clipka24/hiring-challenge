@@ -56,26 +56,13 @@ _cached_credentials: dict | None = None
 
 
 def _get_db_credentials() -> dict:
-    """Fetch database credentials from AWS Secrets Manager (with cache).
-
-    Falls back to individual DB_* environment variables for local development.
-    """
+    """Fetch database credentials from AWS Secrets Manager (with cache)."""
     global _cached_credentials
     if _cached_credentials is not None:
         return _cached_credentials
 
     secret_arn = os.environ.get(SECRET_ARN_ENV)
     if not secret_arn:
-        if os.environ.get("DB_HOST"):
-            _cached_credentials = {
-                "host": os.environ["DB_HOST"],
-                "port": os.environ.get("DB_PORT", "5432"),
-                "dbname": os.environ["DB_NAME"],
-                "username": os.environ["DB_USER"],
-                "password": os.environ["DB_PASSWORD"],
-            }
-            logger.info("Database credentials loaded from environment variables")
-            return _cached_credentials
         raise EnvironmentError(
             f"Environment variable '{SECRET_ARN_ENV}' is not set"
         )
